@@ -6,6 +6,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +29,15 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String role;
     private Boolean actif = false;
+
+    // Nouveau champ pour stocker uniquement le jour
+    private LocalDate createDay;
+
+    // Méthode pour définir automatiquement le jour de la creation du compte
+    @PrePersist
+    public void prePersist() {
+        this.createDay = LocalDate.now(ZoneId.systemDefault()); // Stocke la date actuelle
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Entity
 @Data
@@ -17,5 +19,10 @@ public class Validation {
     private Instant activation;
     private String code;
     @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)// +
     private User user;
+
+    // Nouveau champ pour stocker uniquement le jour
+    private LocalDate validationDay;
+
 }
