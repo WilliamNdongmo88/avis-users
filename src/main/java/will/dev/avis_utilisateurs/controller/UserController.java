@@ -50,6 +50,12 @@ public class UserController {
        return null;
     }
 
+    //deconnexion
+    @PostMapping("deconnexion")
+    public void deconnexion(){
+        this.jwtService.deconnexion();
+    }
+
     //Get Account create today
     @GetMapping("account_create_today")
     public ResponseEntity<Map<String, Object>> getAccountCreateToDay(){

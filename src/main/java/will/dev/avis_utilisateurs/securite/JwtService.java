@@ -5,26 +5,81 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import will.dev.avis_utilisateurs.entities.Jwt;
 import will.dev.avis_utilisateurs.entities.User;
+import will.dev.avis_utilisateurs.repository.JwtRepository;
 import will.dev.avis_utilisateurs.services.UserService;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import static will.dev.avis_utilisateurs.securite.KeyGeneratorUtil.generateEncryptionKey;
+
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class JwtService {
-    private final String ENCRYPTION_KEY = "358cc7585481afa64648741edcc1b3672e4eea5b8faf3acf992ba1bd72bcc2fe";
+    public static final String BEARER = "Bearer";
+    //private final String ENCRYPTION_KEY = "9710e6844f0bb2a4aa13608d1f207a15fb9f35c602582ac6ba3525daceba966d";
+    private final String ENCRYPTION_KEY = generateEncryptionKey(32);
     private final UserService userService;
+    private final JwtRepository jwtRepository;
+
+    // début branch déconnexion
+    public Jwt tokenByValue(String token) {
+        return this.jwtRepository.findByValeur(token).orElseThrow(() -> new RuntimeException("Token inconnu"));
+    }
+
+
+    public void deconnexion() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();//Recupération du user connecté
+        Jwt jwt = this.jwtRepository.findUserValidToken(user.getEmail(), false, false)
+                .orElseThrow(()-> new RuntimeException("Token invalide"));
+        jwt.setExpire(true);
+        jwt.setDesactive(true);
+        this.jwtRepository.save(jwt);
+    }
+
+    //Fin déconnexion
 
     //Début du traitement du token a générer
     public Map<String, String> generate(String username){
         User user = (User) this.userService.loadUserByUsername(username);
-        return this.generateJwt(user);
+        this.disableTokens(user);//---------------------Désactivation de tous les tokens lié a l'utilisateur précedement creer
+        Map<String, String> jwtMap = this.generateJwt(user);
+        // début branch déconnexion
+        Jwt jwt = Jwt
+                .builder()
+                .valeur(jwtMap.get(BEARER))
+                .desactive(false)
+                .expire(false)
+                .user(user)
+                .build();
+        this.jwtRepository.save(jwt);//Sauvegade la valeur du token dans la bd
+        //Fin déconnexion
+
+        return jwtMap;
     }
+
+    private void disableTokens(User user){
+        final List<Jwt> jwtList = this.jwtRepository.findUser(user.getEmail())
+                .filter(jwt -> jwt.getUser() != null) // Évite les valeurs null
+                .peek(jwt ->{
+                    jwt.setDesactive(true);
+                    jwt.setExpire(true);
+                        }
+                ).collect(Collectors.toList());
+        this.jwtRepository.saveAll(jwtList);
+    }
+
 
     private Map<String, String> generateJwt(User user) {
         long currentTime = System.currentTimeMillis();
@@ -42,7 +97,7 @@ public class JwtService {
                 .claims(claims)
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
-        return Map.of("Bearer", bearer);
+        return Map.of(BEARER, bearer);
     }
 
     private Key getKey(){
@@ -57,8 +112,12 @@ public class JwtService {
     }
 
     public Boolean isTokenExpred(String token) {
-        Date expirationDate = this.getClaims(token, Claims::getExpiration);
-        return expirationDate.before(new Date());
+        try {
+            Date expirationDate = this.getClaims(token, Claims::getExpiration);
+            return expirationDate.before(new Date());
+        } catch (Exception e) {
+            throw new RuntimeException("Le token a expiré");
+        }
     }
 
     private <T> T getClaims(String token, Function<Claims, T> function) {
@@ -73,5 +132,6 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
     //Fin du traitement.
 }

@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
+import will.dev.avis_utilisateurs.entities.Jwt;
 import will.dev.avis_utilisateurs.services.UserService;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null;
         String username = null;
         Boolean isTokenExpred = true;
+        Jwt tokenDansBd = null;//--------------------------------------------------------------------------Branch déconnexion
 
         //Bearer eyJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NDI2OTYyMDAsImV4cCI6MTc0MjY5ODAwMCwic3ViIjoiZm90c29uZG9uZ21vOEBnbWFpbC5jb20iLCJub20iOiJGb3RzbyBOZG9uZ21vIiwiZW1haWwiOiJmb3Rzb25kb25nbW84QGdtYWlsLmNvbSJ9.LfcWY1gDsACTUwld1wLmw6LICu6K54WnCku7-89VVn4
         String authorisation = request.getHeader("Authorization");
@@ -34,6 +36,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authorisation != null && authorisation.startsWith("Bearer ")){
             token = authorisation.substring(7);
+            tokenDansBd = this.jwtService.tokenByValue(token);//-------------------------------------------Branch déconnexion
             isTokenExpred = jwtService.isTokenExpred(token);
             username = jwtService.extractUsername(token);
             System.out.println("Token extrait: " + token);
@@ -41,7 +44,10 @@ public class JwtFilter extends OncePerRequestFilter {
             System.out.println("Token expiré ? " + isTokenExpred);
         }
 
-        if (!isTokenExpred && username != null && SecurityContextHolder.getContext().getAuthentication() == null){
+        if (!isTokenExpred
+                //&& username != null
+                && tokenDansBd.getUser().getEmail().equals(username)//---------------------------------------Branch déconnexion
+                && SecurityContextHolder.getContext().getAuthentication() == null){
             UserDetails userDetails = userService.loadUserByUsername(username);
             if (userDetails != null) {
                 System.out.println("Utilisateur authentifié : " + userDetails.getUsername());
