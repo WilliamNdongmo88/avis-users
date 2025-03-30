@@ -7,6 +7,8 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import will.dev.avis_utilisateurs.entities.Jwt;
@@ -14,15 +16,16 @@ import will.dev.avis_utilisateurs.entities.User;
 import will.dev.avis_utilisateurs.repository.JwtRepository;
 import will.dev.avis_utilisateurs.services.UserService;
 import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static will.dev.avis_utilisateurs.securite.KeyGeneratorUtil.generateEncryptionKey;
 
+@Slf4j
 @Transactional
 @Service
 @RequiredArgsConstructor
@@ -48,6 +51,18 @@ public class JwtService {
         this.jwtRepository.save(jwt);
     }
 
+    //@Scheduled(cron = "@daily")// L'execution se faira tous les jours
+    @Scheduled(cron = "0 */1 * * * *")
+    public void removeUselessJwt(){
+        log.info("Suppresion des tokens a {} " + Instant.now());
+        List<Jwt> tokens = this.jwtRepository.deleteAllByExpireAndDesactiveJwt(true, true);
+        if (!tokens.isEmpty()) {
+            jwtRepository.deleteAll(tokens);
+            log.info("{} tokens supprimés.", tokens.size());
+        } else {
+            log.info("Aucun token à supprimer.");
+        }
+    }
     //Fin déconnexion
 
     //Début du traitement du token a générer
