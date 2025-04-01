@@ -37,6 +37,18 @@ public class UserController {
         this.userService.activation(activation);
     }
 
+    //Modified Password
+    @PostMapping("modified-password")
+    public void modifierPassword(@RequestBody Map<String, String> param){
+        this.userService.modifierPassword(param);
+    }
+
+    //New Password
+    @PostMapping("new-password")
+    public void newPassword(@RequestBody Map<String, String> param){
+        this.userService.newPassword(param);
+    }
+
     //Connexion
     @PostMapping("connexion")
     public Map<String, String> connexion(@RequestBody AuthenticationDTO authenticationDTO){

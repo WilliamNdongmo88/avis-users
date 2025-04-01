@@ -38,7 +38,8 @@ public class JwtService {
 
     // début branch déconnexion
     public Jwt tokenByValue(String token) {
-        return this.jwtRepository.findByValeur(token).orElseThrow(() -> new RuntimeException("Token inconnu"));
+        return this.jwtRepository.findByValeurAndDesactiveAndExpire(token, false, false)
+                .orElseThrow(() -> new RuntimeException("Token invalid ou inconnu"));
     }
 
 

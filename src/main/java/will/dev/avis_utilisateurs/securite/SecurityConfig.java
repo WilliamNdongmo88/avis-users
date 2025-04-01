@@ -30,8 +30,8 @@ public class SecurityConfig {
                         .requestMatchers("/inscription").permitAll()
                         .requestMatchers("/activation").permitAll()
                         .requestMatchers("/connexion").permitAll()
-                        .requestMatchers("/avis/create").permitAll()
-                        .requestMatchers("/account_create_today").permitAll()
+                        .requestMatchers("/modified-password").permitAll()
+                        .requestMatchers("/new-password").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Debut: Pour autoriser l'utilisateur a effectuer des actions dans l'application grace au token

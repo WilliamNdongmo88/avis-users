@@ -18,8 +18,9 @@ public class Validation {
     private Instant expiration;
     private Instant activation;
     private String code;
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)// +
+
+    @OneToOne(cascade = {CascadeType.MERGE, CascadeType.DETACH})
+    @JoinColumn(name = "user_id")
     private User user;
 
     // Nouveau champ pour stocker uniquement le jour

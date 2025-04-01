@@ -2,6 +2,7 @@ package will.dev.avis_utilisateurs.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -63,8 +64,8 @@ public class UserService implements UserDetailsService {
     }
 
     public ResponseEntity<Map<String, Object>> getAccountCreateToDay(){
-        //LocalDate today = LocalDate.now();
-        LocalDate today = LocalDate.of(2025, 3, 21);
+        LocalDate today = LocalDate.now();
+        //LocalDate today = LocalDate.of(2025, 3, 21);
         System.out.println("Date du jour : " + today);
         List<User> users = this.userRepository.findByCreateDay(today);
         Map<String, Object> response = new HashMap<>();
@@ -80,5 +81,21 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return this.userRepository.findByEmail(username)
                 .orElseThrow(()-> new UsernameNotFoundException("Aucun utilisateur ne correspond a cet identifiant"));
+    }
+
+    //-----------------------------Branch modifiedPassword-------------------------------------------
+    public void modifierPassword(Map<String, String> parametre) {
+        User user = (User) this.loadUserByUsername(parametre.get("email"));
+        this.validationService.enregistrer(user);
+    }
+
+    public void newPassword(Map<String, String> param) {
+        User user = (User) this.loadUserByUsername(param.get("email"));
+        final Validation validation = validationService.lireCode(param.get("code"));
+        if (validation.getUser().getEmail().equals(user.getEmail())){
+            String mdpCrypte = this.bCryptPasswordEncoder.encode(param.get("password"));
+            user.setMdp(mdpCrypte);
+            this.userRepository.save(user);
+        }
     }
 }
