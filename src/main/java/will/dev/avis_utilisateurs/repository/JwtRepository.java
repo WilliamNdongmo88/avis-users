@@ -5,6 +5,7 @@ import org.springframework.data.repository.CrudRepository;
 import will.dev.avis_utilisateurs.entities.Jwt;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -21,7 +22,9 @@ public interface JwtRepository extends CrudRepository<Jwt, Long> {
     @Query("SELECT j FROM Jwt j WHERE j.expire=:expire AND j.desactive=:desactive")
     List<Jwt> deleteAllByExpireAndDesactiveJwt(Boolean expire, Boolean desactive);
 
-    //-----------------------------Branch modifiedPassword-------------------------------------------
+    //-----------------------------Branch refresh token-------------------------------------------
+    @Query("SELECT j FROM Jwt j WHERE j.refreshToken.valeur=:valeur")
+    Optional<Jwt> findByRefreshToken(String valeur);
 
 
 }

@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import will.dev.avis_utilisateurs.entities.Jwt;
+import will.dev.avis_utilisateurs.entities.RefreshToken;
 import will.dev.avis_utilisateurs.entities.User;
 import will.dev.avis_utilisateurs.repository.JwtRepository;
 import will.dev.avis_utilisateurs.services.UserService;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,17 +33,29 @@ import static will.dev.avis_utilisateurs.securite.KeyGeneratorUtil.generateEncry
 @RequiredArgsConstructor
 public class JwtService {
     public static final String BEARER = "Bearer";
+    public static final String REFRESH = "refresh";
     //private final String ENCRYPTION_KEY = "9710e6844f0bb2a4aa13608d1f207a15fb9f35c602582ac6ba3525daceba966d";
     private final String ENCRYPTION_KEY = generateEncryptionKey(32);
     private final UserService userService;
     private final JwtRepository jwtRepository;
+
+    //Début branch refresh token
+    public Map<String, String> refreshToken(Map<String, String> refreshTokenRequest) {
+        final Jwt jwt = this.jwtRepository.findByRefreshToken(refreshTokenRequest.get(REFRESH))
+                .orElseThrow(() -> new RuntimeException("### Token invalid ###"));
+        if (jwt.getRefreshToken().getExpire() || jwt.getRefreshToken().getExpiration().isBefore(Instant.now())) {
+            throw new RuntimeException("Token invaid");
+        }
+        Map<String, String> tokens = this.generate(jwt.getUser().getEmail());
+        //this.disableTokens(jwt.getUser());
+        return tokens;
+    }
 
     // début branch déconnexion
     public Jwt tokenByValue(String token) {
         return this.jwtRepository.findByValeurAndDesactiveAndExpire(token, false, false)
                 .orElseThrow(() -> new RuntimeException("Token invalid ou inconnu"));
     }
-
 
     public void deconnexion() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();//Recupération du user connecté
@@ -70,7 +84,15 @@ public class JwtService {
     public Map<String, String> generate(String username){
         User user = (User) this.userService.loadUserByUsername(username);
         this.disableTokens(user);//---------------------Désactivation de tous les tokens lié a l'utilisateur précedement creer
-        Map<String, String> jwtMap = this.generateJwt(user);
+        Map<String, String> jwtMap = new java.util.HashMap<>(this.generateJwt(user));
+        //-----------------Branch refresh-token
+        RefreshToken refreshToken = RefreshToken
+                .builder()
+                .valeur(UUID.randomUUID().toString())
+                .expire(false)
+                .creation(Instant.now())
+                .expiration(Instant.now().plusMillis(30*60*1000))
+                .build();
         // début branch déconnexion
         Jwt jwt = Jwt
                 .builder()
@@ -78,10 +100,11 @@ public class JwtService {
                 .desactive(false)
                 .expire(false)
                 .user(user)
+                .refreshToken(refreshToken)//-----------------Branch refresh-token
                 .build();
         this.jwtRepository.save(jwt);//Sauvegade la valeur du token dans la bd
         //Fin déconnexion
-
+        jwtMap.put(REFRESH, refreshToken.getValeur());
         return jwtMap;
     }
 
@@ -89,9 +112,10 @@ public class JwtService {
         final List<Jwt> jwtList = this.jwtRepository.findUser(user.getEmail())
                 .filter(jwt -> jwt.getUser() != null) // Évite les valeurs null
                 .peek(jwt ->{
-                    jwt.setDesactive(true);
-                    jwt.setExpire(true);
-                        }
+                        jwt.setDesactive(true);
+                        jwt.setExpire(true);
+                    //jwt.getRefreshToken().setExpire(true);
+                    }
                 ).collect(Collectors.toList());
         this.jwtRepository.saveAll(jwtList);
     }
@@ -99,7 +123,7 @@ public class JwtService {
 
     private Map<String, String> generateJwt(User user) {
         long currentTime = System.currentTimeMillis();
-        long expirationTime = currentTime + 30*60*1000;
+        long expirationTime = currentTime + 60*1000;
         Map<String, Object> claims = Map.of(
                 "nom", user.getNom(),
                 Claims.EXPIRATION, new Date(expirationTime),

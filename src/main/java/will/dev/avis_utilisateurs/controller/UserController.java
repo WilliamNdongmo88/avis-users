@@ -62,6 +62,12 @@ public class UserController {
        return null;
     }
 
+    //Refresh token
+    @PostMapping("refresh-token")
+    public Map<String, String> refreshToken(@RequestBody Map<String, String> refreshTokenRequest){
+        return this.jwtService.refreshToken(refreshTokenRequest);
+    }
+
     //deconnexion
     @PostMapping("deconnexion")
     public void deconnexion(){

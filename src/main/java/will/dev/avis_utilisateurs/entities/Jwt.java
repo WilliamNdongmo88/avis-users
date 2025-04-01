@@ -21,7 +21,11 @@ public class Jwt {
     private Boolean desactive;
     private Boolean expire;
 
-    @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.MERGE})
+    //-------------Branch refresh token--------------
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.REMOVE})//La suppression de la table Jwt supprimera égamemt la table refreshToken
+    private RefreshToken refreshToken;
+
+    @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.MERGE})//La suppression de la table Jwt ne supprimera pas la table user
     @JoinColumn(name = "user_id")
     private User user;
 }

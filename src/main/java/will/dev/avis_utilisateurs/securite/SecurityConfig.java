@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/connexion").permitAll()
                         .requestMatchers("/modified-password").permitAll()
                         .requestMatchers("/new-password").permitAll()
+                        .requestMatchers("/refresh-token").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Debut: Pour autoriser l'utilisateur a effectuer des actions dans l'application grace au token
