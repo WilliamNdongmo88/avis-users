@@ -27,8 +27,11 @@ public class User implements UserDetails {
     @Column (name="mot_de_passe")
     private String mdp;
     @Column(nullable = false)
-    private String role;
+    //private String role;
     private Boolean actif = false;
+
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private Role role;
 
     // Nouveau champ pour stocker uniquement le jour
     private LocalDate createDay;
@@ -41,7 +44,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE: " + this.role));
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE: " + this.role.getLebelle()));
     }
 
     @Override

@@ -7,6 +7,8 @@ import will.dev.avis_utilisateurs.entities.Avis;
 import will.dev.avis_utilisateurs.entities.User;
 import will.dev.avis_utilisateurs.repository.AvisRepository;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AvisServices {
@@ -18,5 +20,9 @@ public class AvisServices {
         System.out.println("userConnected : "+ userConnected);
         avis.setUser(userConnected);
         this.avisRepository.save(avis);
+    }
+
+    public List<Avis> listAvis() {
+        return (List<Avis>) this.avisRepository.findAll();
     }
 }
