@@ -8,8 +8,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import will.dev.avis_utilisateurs.entities.EmailValids;
+import will.dev.avis_utilisateurs.entities.Role;
 import will.dev.avis_utilisateurs.entities.User;
 import will.dev.avis_utilisateurs.entities.Validation;
+import will.dev.avis_utilisateurs.enums.TypeDeRole;
+import will.dev.avis_utilisateurs.repository.EmailValidsRepository;
 import will.dev.avis_utilisateurs.repository.UserRepository;
 import will.dev.avis_utilisateurs.repository.ValidationRepository;
 
@@ -28,6 +32,8 @@ public class UserService implements UserDetailsService {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final ValidationService validationService;
     private final ValidationRepository validationRepository;
+    private final EmailValidsRepository emailValidsRepository;
+    //private Boolean bool = false;
 
     //Inscription
     public ResponseEntity<?>  create(User user) {
@@ -43,8 +49,52 @@ public class UserService implements UserDetailsService {
         String mdpCrypte = this.bCryptPasswordEncoder.encode(user.getPassword());
         user.setMdp(mdpCrypte);
 
-        user = this.userRepository.save(user);
-        this.validationService.enregistrer(user);//Utiliser pour activer un compte utilisateur
+        if (user.getEmail().contains(".admin")){
+            Optional<EmailValids> emailValids = Optional.ofNullable(this.emailValidsRepository.findByEmail(user.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Email non valid")));
+            System.out.println("Email: " + emailValids);
+            if (emailValids.isPresent()){
+                //this.bool = true;
+                Role userRole = new Role();
+                userRole.setLebelle(TypeDeRole.ADMIN);
+                user.setRole(userRole);
+                user = this.userRepository.save(user);
+                this.validationService.enregistrer(user);//Utiliser pour activer un compte utilisateur
+            }
+        } else if (user.getEmail().contains(".manager")) {
+            Optional<EmailValids> emailValids = Optional.ofNullable(this.emailValidsRepository.findByEmail(user.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Email non valid")));
+            System.out.println("Email: " + emailValids);
+            if (emailValids.isPresent()){
+                //this.bool = true;
+                Role userRole = new Role();
+                userRole.setLebelle(TypeDeRole.MANAGER);
+                user.setRole(userRole);
+                user = this.userRepository.save(user);
+                this.validationService.enregistrer(user);//Utiliser pour activer un compte utilisateur
+            }
+        /*}else if (!this.bool){
+            throw new RuntimeException("Email incorrect");*/
+        }else {
+            /*List<Role> roles = this.userRepository.findAllRole();
+            TypeDeRole typeDeRole = null;
+            Boolean bool = false;
+            for (Role role : roles){
+                if (role.getLebelle().equals(TypeDeRole.USER)){
+                    bool = true;
+                    typeDeRole = role.getLebelle();
+                    user.setRole(role);
+                }
+            }
+            if (!bool){
+
+            }*/
+            Role userRole = new Role();
+            userRole.setLebelle(TypeDeRole.USER);
+            user.setRole(userRole);
+            user = this.userRepository.save(user);
+            this.validationService.enregistrer(user);//Utiliser pour activer un compte utilisateur
+        }
         return ResponseEntity.ok(user);
     }
 
@@ -97,5 +147,9 @@ public class UserService implements UserDetailsService {
             user.setMdp(mdpCrypte);
             this.userRepository.save(user);
         }
+    }
+
+    public List<User> listUsers() {
+        return this.userRepository.findAll();
     }
 }

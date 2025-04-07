@@ -17,7 +17,7 @@ public class AvisServices {
     //Create
     public void create(Avis avis){
         User userConnected = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();//Recuperation du user connecté et authorisation a cet user de creer un avis grace a son token valide
-        System.out.println("userConnected : "+ userConnected);
+        //System.out.println("userConnected : "+ userConnected);
         avis.setUser(userConnected);
         this.avisRepository.save(avis);
     }

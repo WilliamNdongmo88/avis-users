@@ -30,7 +30,7 @@ public class User implements UserDetails {
     //private String role;
     private Boolean actif = false;
 
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Role role;
 
     // Nouveau champ pour stocker uniquement le jour
@@ -42,10 +42,17 @@ public class User implements UserDetails {
         this.createDay = LocalDate.now(ZoneId.systemDefault()); // Stocke la date actuelle
     }
 
+    //Start-------------------------------------------Branch Role&Permission
+    /*@Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.getLebelle()));
+    }*/
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE: " + this.role.getLebelle()));
+        return this.role.getLebelle().getAuthorities();
     }
+    //End-------------------------------------------Branch Role&Permission
 
     @Override
     public String getPassword() {
