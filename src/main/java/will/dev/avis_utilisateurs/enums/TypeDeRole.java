@@ -31,7 +31,10 @@ public enum TypeDeRole {
             MANAGER_UPDATE,
             MANAGER_DELETE_AVIS
     )),
-    USER(Set.of(USER_CREATE_AVIS));
+    USER(Set.of(
+            USER_CREATE_AVIS,
+            USER_READ
+    ));
 
     @Getter
     Set<TypePermission> permission;

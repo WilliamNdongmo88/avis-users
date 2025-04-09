@@ -15,7 +15,8 @@ public enum TypePermission {
     MANAGER_UPDATE,
     MANAGER_DELETE_AVIS,
 
-    USER_CREATE_AVIS;
+    USER_CREATE_AVIS,
+    USER_READ;
 
     //@Getter
     //private String libelle;
