@@ -11,12 +11,13 @@ import will.dev.avis_utilisateurs.services.AvisServices;
 import java.util.List;
 
 @RestController
-@RequestMapping("avis")
+@RequestMapping("/avis")
 @RequiredArgsConstructor
 public class AvisController {
     private final AvisServices avisServices;
 
     //POST
+    @PreAuthorize("hasAnyAuthority('USER_CREATE_AVIS')")
     @PostMapping("create")
     @ResponseStatus(HttpStatus.CREATED)
     public void create(@RequestBody Avis avis){
